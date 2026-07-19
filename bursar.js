@@ -26,7 +26,9 @@ const db = initializeFirestore(app, { localCache: persistentLocalCache() });
 emailjs.init("7pmLCsmrNpjD3gZVS");
 
 // --- INCOME ELEMENTS ---
-const studentSelect = document.getElementById('student-select');
+// UPDATED: Now uses the searchable datalist inputs
+const studentSearch = document.getElementById('student-search'); 
+const studentDatalist = document.getElementById('student-datalist'); 
 const paymentMethod = document.getElementById('payment-method');
 const amountInput = document.getElementById('amount');
 const paymentDesc = document.getElementById('payment-desc'); // Maps the Narration
@@ -64,22 +66,23 @@ async function loadSystemData() {
         classSnap.forEach(doc => { classFeeMap[doc.data().name] = doc.data().term_fee || 0; });
 
         const studentSnap = await getDocs(collection(db, "students"));
-        studentSelect.innerHTML = '<option value="">-- Select a Student --</option>'; 
+        studentDatalist.innerHTML = ''; // Clear datalist
         studentSnap.forEach((doc) => {
             const student = doc.data();
             studentDataMap[student.name] = student;
             const option = document.createElement('option');
             option.value = student.name;
-            option.innerText = `${student.name} (${student.class})`;
-            studentSelect.appendChild(option);
+            studentDatalist.appendChild(option); // Add to searchable datalist
         });
     } catch (error) { console.error(error); }
 }
 
-// 2. LIVE BALANCE CALCULATOR
-studentSelect.addEventListener('change', async (e) => {
+// 2. LIVE BALANCE CALCULATOR & STATEMENT GENERATOR
+studentSearch.addEventListener('change', async (e) => {
     const selectedName = e.target.value;
-    if (!selectedName) {
+    
+    // Ensure they typed a real name before showing the card
+    if (!selectedName || !studentDataMap[selectedName]) {
         accountStatusCard.style.display = 'none';
         return;
     }
@@ -98,7 +101,23 @@ studentSelect.addEventListener('change', async (e) => {
     const txSnap = await getDocs(q);
     
     let totalPaid = 0;
-    txSnap.forEach(doc => { totalPaid += doc.data().amount; });
+    
+    // NEW: Build the Prior Payments Statement HTML
+    let historyHTML = '<p style="font-size: 11px; color: #7f8c8d; text-transform: uppercase; font-weight: bold; margin: 0 0 5px 0;">Prior Payments Log</p><ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #2c3e50; line-height: 1.6;">';
+    
+    txSnap.forEach(doc => { 
+        const tx = doc.data();
+        totalPaid += tx.amount; 
+        const dateStr = tx.timestamp ? tx.timestamp.toDate().toLocaleDateString() : 'Recent';
+        historyHTML += `<li>${dateStr} — <strong>$${tx.amount.toFixed(2)}</strong> via ${tx.method}</li>`;
+    });
+    
+    if (txSnap.empty) historyHTML += '<li style="color: #e74c3c;">No prior payments found.</li>';
+    historyHTML += '</ul>';
+    
+    // Inject the statement into the UI
+    const statementEl = document.getElementById('student-statement');
+    if (statementEl) statementEl.innerHTML = historyHTML;
 
     currentStudentBalance = totalExpected - totalPaid;
 
@@ -118,7 +137,7 @@ studentSelect.addEventListener('change', async (e) => {
 
 // 3. PROCESS INCOME & SEND RECEIPT
 processBtn.addEventListener('click', async () => {
-    const selectedStudent = studentSelect.value;
+    const selectedStudent = studentSearch.value; // Pull from the search input
     const amount = parseFloat(amountInput.value);
     const narration = paymentDesc.value.trim() || "Term Fees";
     
@@ -166,7 +185,7 @@ processBtn.addEventListener('click', async () => {
         
         amountInput.value = "";
         paymentDesc.value = ""; // Clear narration input
-        studentSelect.value = "";
+        studentSearch.value = ""; // Clear search input
         accountStatusCard.style.display = 'none';
         processBtn.innerText = "Complete Transaction";
         processBtn.disabled = false;
