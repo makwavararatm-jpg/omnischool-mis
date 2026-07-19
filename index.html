@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OmniSchool - IntraCore Secure Access</title>
+    <style>
+        /* Base Reset & Typography */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        /* 1. Remove the dark background from the body */
+        body, html { 
+            margin: 0; padding: 0; 
+            font-family: 'Inter', sans-serif; 
+            height: 100vh; 
+            color: #ffffff;
+            overflow: hidden;
+            background-color: transparent; 
+        }
+
+        /* 2. Put the image at layer 0 */
+        .bg-image {
+            position: absolute;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: url('campus-bg.png') no-repeat center center;
+            background-size: cover;
+            z-index: 0;
+        }
+        
+        /* 3. Put the gradient overlay at layer 1 */
+        .bg-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(90deg, rgba(15,17,26,0.95) 0%, rgba(20,22,33,0.6) 50%, rgba(15,17,26,0.95) 100%);
+            z-index: 1;
+        }
+
+        /* 4. Put the main container at layer 2 so it sits on top */
+        .container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1200px;
+            margin: 0 auto;
+            height: 100vh;
+            padding: 0 40px;
+            box-sizing: border-box;
+            position: relative; 
+            z-index: 2; 
+        }
+
+        /* --- LEFT PANEL: MARKETING & FEATURES --- */
+        .marketing-panel {
+            flex: 1;
+            padding-right: 60px;
+        }
+
+        .version-badge {
+            display: inline-block;
+            border: 1px solid #10b981;
+            color: #10b981;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 25px;
+            background: rgba(16, 185, 129, 0.1);
+            backdrop-filter: blur(4px);
+        }
+
+        h1 {
+            font-size: 56px;
+            font-weight: 800;
+            line-height: 1.1;
+            margin: 0 0 30px 0;
+            letter-spacing: -1px;
+        }
+        h1 .highlight { color: #10b981; }
+
+        /* Glassmorphic Feature Box */
+        .feature-box {
+            background: rgba(30, 33, 48, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 25px;
+            max-width: 450px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        .box-title {
+            font-size: 14px;
+            font-weight: 800;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .feature-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            color: #a0aab2;
+        }
+        .feature-row:last-child { border-bottom: none; padding-bottom: 0; }
+        .feature-row .val { color: #10b981; font-weight: 600; }
+
+        /* --- RIGHT PANEL: LOGIN UI --- */
+        .login-panel { width: 420px; text-align: center; }
+
+        .brand-header { font-size: 28px; font-weight: 800; margin: 0; letter-spacing: -0.5px; }
+        .brand-sub { font-size: 11px; color: #7f8c8d; font-weight: 800; letter-spacing: 2px; margin-top: 5px; margin-bottom: 30px; }
+
+        /* Restored Role Tabs */
+        .auth-tabs { display: flex; gap: 10px; margin-bottom: 25px; }
+        .tab-btn {
+            flex: 1; padding: 14px; border: 1px solid rgba(255,255,255,0.1); 
+            background: rgba(0,0,0,0.4); color: #a0aab2; font-weight: 800; 
+            font-size: 11px; letter-spacing: 1px; border-radius: 6px; 
+            cursor: pointer; transition: 0.2s; text-transform: uppercase;
+        }
+        .tab-btn:hover { background: rgba(255,255,255,0.05); color: #fff; }
+        .tab-btn.active { background: #10b981; color: white; border-color: #10b981; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); }
+
+        .auth-form { display: none; }
+        .auth-form.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .input-group { text-align: left; margin-bottom: 20px; }
+        .input-group label { display: block; font-size: 11px; font-weight: 800; color: #a0aab2; margin-bottom: 8px; letter-spacing: 0.5px; }
+        
+        .input-group input, .input-group select {
+            width: 100%; padding: 16px; border-radius: 6px; font-size: 14px; font-family: inherit; box-sizing: border-box; outline: none; transition: all 0.2s;
+            background-color: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #ffffff;
+            backdrop-filter: blur(4px);
+        }
+        .input-group input:focus, .input-group select:focus { border-color: #10b981; background-color: rgba(0, 0, 0, 0.6); }
+        .input-group select option { background: #1a1c23; color: #fff; } /* Fix for dropdown menu styling */
+
+        .btn-primary {
+            background-color: #10b981; color: #ffffff; width: 100%; padding: 16px; border: none; border-radius: 6px; 
+            font-size: 14px; font-weight: 800; cursor: pointer; transition: background 0.2s; margin-top: 10px; text-transform: uppercase; letter-spacing: 1px;
+        }
+        .btn-primary:hover { background-color: #0e9f6e; }
+
+        .error-msg { color: #ff5a5f; font-size: 12px; font-weight: 600; margin-top: 15px; display: none; }
+    </style>
+</head>
+<body>
+
+    <!-- Beautiful Educational Background -->
+    <div class="bg-image"></div>
+    <div class="bg-overlay"></div>
+
+    <div class="container">
+        
+        <!-- LEFT PANEL (Marketing) -->
+        <div class="marketing-panel">
+            <div class="version-badge">SYSTEM VERSION 1.0 ONLINE</div>
+            <h1>Scale Your School<br><span class="highlight">Without Limits.</span></h1>
+            
+            <div class="feature-box">
+                <div class="box-title">⚡ OmniSchool vs Generic Cloud MIS</div>
+                <div class="feature-row"><span>Multi-Role Architecture</span><span class="val">Native Auto-Route</span></div>
+                <div class="feature-row"><span>Network Resilience</span><span class="val">True Offline Engine</span></div>
+                <div class="feature-row"><span>Academic & Finance Tiers</span><span class="val">Fully Unlocked</span></div>
+                <div class="feature-row"><span>Data Privacy</span><span class="val">Locally Secured Vault</span></div>
+            </div>
+        </div>
+
+        <!-- RIGHT PANEL (Login Form) -->
+        <div class="login-panel">
+            <h2 class="brand-header">IntraCore</h2>
+            <div class="brand-sub">SECURE SYSTEM ACCESS</div>
+
+            <!-- THE RESTORED TOGGLE TABS -->
+            <div class="auth-tabs">
+                <button class="tab-btn active" onclick="switchAuth('student')">👨‍🎓 Student Access</button>
+                <button class="tab-btn" onclick="switchAuth('staff')">💼 Staff Gateway</button>
+            </div>
+
+            <!-- STUDENT FORM -->
+            <div class="auth-form active" id="form-student">
+                <div class="input-group">
+                    <label>REGISTRATION NUMBER</label>
+                    <input type="text" id="student-reg" placeholder="e.g., Prince">
+                </div>
+                <div class="input-group">
+                    <label>SECURE PASSWORD</label>
+                    <input type="password" placeholder="Enter Password">
+                </div>
+                <button class="btn-primary" id="btn-student-login">INITIALIZE SESSION</button>
+                <div class="error-msg" id="student-error">Registration number is required.</div>
+            </div>
+
+            <!-- STAFF FORM -->
+            <div class="auth-form" id="form-staff">
+                <div class="input-group">
+                    <label>SYSTEM IDENTITY ROUTE</label>
+                    <select id="auth-role">
+                        <option value="">-- Select Access Level --</option>
+                        <option value="admin">👑 Principal / Administrator</option>
+                        <option value="bursar">💰 Finance Office</option>
+                        <option value="academic">📝 Academic Head</option>
+                        <option value="teacher">🍎 Teacher Workspace</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>SECURITY PIN</label>
+                    <input type="password" placeholder="Enter PIN">
+                </div>
+                <button class="btn-primary" id="btn-staff-login">AUTHENTICATE & ENTER</button>
+                <div class="error-msg" id="staff-error">Please select an access level.</div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Tab Switcher Logic
+        function switchAuth(type) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.auth-form').forEach(form => form.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            document.getElementById('form-' + type).classList.add('active');
+        }
+
+        // Student Login Logic
+        document.getElementById('btn-student-login').addEventListener('click', () => {
+            const regNum = document.getElementById('student-reg').value.trim();
+            const error = document.getElementById('student-error');
+            const btn = document.getElementById('btn-student-login');
+            
+            if (!regNum) { error.style.display = 'block'; return; }
+            
+            error.style.display = 'none';
+            btn.innerText = "AUTHENTICATING...";
+            btn.style.opacity = "0.8";
+
+            setTimeout(() => {
+                window.location.href = `student.html?regId=${encodeURIComponent(regNum)}`;
+            }, 600);
+        });
+
+        // Staff Login Logic
+        document.getElementById('btn-staff-login').addEventListener('click', () => {
+            const role = document.getElementById('auth-role').value;
+            const error = document.getElementById('staff-error');
+            const btn = document.getElementById('btn-staff-login');
+
+            if (!role) { error.style.display = 'block'; return; }
+            
+            error.style.display = 'none';
+            btn.innerText = "AUTHENTICATING...";
+            btn.style.opacity = "0.8";
+
+            setTimeout(() => {
+                switch(role) {
+                    case 'admin': window.location.href = 'dashboard.html'; break;
+                    case 'bursar': window.location.href = 'bursar.html'; break;
+                    case 'academic': window.location.href = 'grading.html'; break;
+                    case 'teacher': window.location.href = 'teacher.html'; break;
+                }
+            }, 600);
+        });
+    </script>
+</body>
+</html>

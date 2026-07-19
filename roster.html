@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OmniSchool - Class Roster</title>
+    <style>
+        /* Base Reset & Layout */
+        body, html { font-family: system-ui, sans-serif; margin: 0; padding: 0; background: #f4f7f6; color: #333; height: 100vh; overflow: hidden; }
+        .app-container { display: flex; height: 100vh; width: 100vw; }
+        
+        /* Sidebar */
+        .sidebar { width: 260px; background: #10b981; color: white; display: flex; flex-direction: column; flex-shrink: 0; box-shadow: 2px 0 10px rgba(0,0,0,0.05); z-index: 10; }
+        .sidebar-brand { padding: 25px 20px; font-size: 24px; font-weight: bold; color: #fff; border-bottom: 1px solid rgba(255,255,255,0.2); display: flex; align-items: center; gap: 10px; }
+        .sidebar-brand span { color: #e8f8f5; font-weight: normal; }
+        .nav-links { list-style: none; padding: 0; margin: 20px 0; display: flex; flex-direction: column; gap: 5px; }
+        .nav-links li { padding: 0 15px; }
+        .nav-links a { display: flex; align-items: center; gap: 12px; padding: 12px 15px; color: #e8f8f5; text-decoration: none; border-radius: 8px; transition: all 0.2s; font-weight: 500; }
+        .nav-links a:hover { background: rgba(255,255,255,0.2); color: white; }
+        .nav-links li.active a { background: white; color: #10b981; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .sidebar-footer { margin-top: auto; padding: 20px; border-top: 1px solid rgba(255,255,255,0.2); font-size: 12px; color: rgba(255,255,255,0.8); text-align: center; }
+
+        /* Main Content */
+        .main-content { flex-grow: 1; padding: 30px; overflow-y: auto; position: relative; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .header h1 { margin: 0; color: #2c3e50; display: flex; align-items: center; gap: 15px; }
+        .sync-badge { background: #e8f8f5; color: #10b981; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 14px; border: 1px solid #10b981; }
+        
+        .btn-back { background: #e0e6ed; color: #2c3e50; padding: 8px 15px; border-radius: 6px; text-decoration: none; font-size: 14px; font-weight: bold; transition: background 0.2s; }
+        .btn-back:hover { background: #cbd5e1; }
+        
+        /* Table Styles */
+        .data-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { padding: 15px; border-bottom: 2px solid #f0f0f0; color: #7f8c8d; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
+        td { padding: 15px; border-bottom: 1px solid #f0f0f0; color: #2c3e50; font-weight: 500; }
+        tr:hover td { background: #f8fafc; cursor: pointer; }
+        
+        .empty-state { text-align: center; padding: 40px; color: #7f8c8d; font-style: italic; }
+        .pending-warning { color: #e74c3c; font-size: 12px; font-weight: bold; background: #fdedec; padding: 2px 6px; border-radius: 4px; margin-left: 10px; }
+
+        /* --- DIGITAL FILE MODAL (UPGRADED) --- */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.4); z-index: 100; justify-content: center; align-items: center; backdrop-filter: blur(3px); }
+        .modal-card { background: white; padding: 30px; border-radius: 12px; width: 100%; max-width: 550px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        
+        /* Profile Header Component */
+        .profile-header { display: flex; align-items: center; gap: 20px; border-bottom: 2px solid #f4f7f6; padding-bottom: 20px; margin-bottom: 20px; }
+        .avatar { width: 60px; height: 60px; border-radius: 50%; background: #e8f8f5; color: #10b981; display: flex; justify-content: center; align-items: center; font-size: 24px; font-weight: bold; border: 2px solid #10b981; }
+        .profile-titles h3 { margin: 0 0 5px 0; color: #2c3e50; font-size: 22px; }
+        .sys-id-badge { display: inline-block; background: #2c3e50; color: white; padding: 4px 10px; border-radius: 6px; font-family: monospace; font-size: 13px; font-weight: bold; }
+        
+        /* Section Grouping */
+        .section-title { font-size: 13px; color: #10b981; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; margin-bottom: 15px; }
+        
+        /* Read-Only Stats Grid */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #e2e8f0; }
+        .stat-item label { display: block; font-size: 12px; color: #7f8c8d; text-transform: uppercase; margin-bottom: 4px; }
+        .stat-item span { font-weight: bold; color: #2c3e50; font-size: 15px; }
+
+        /* Form Inputs */
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; font-weight: 600; margin-bottom: 5px; color: #7f8c8d; font-size: 12px; text-transform: uppercase; }
+        .input-group input { width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; box-sizing: border-box; font-size: 14px; outline: none; transition: border-color 0.2s; background: #fdfdfd; }
+        .input-group input:focus { border-color: #10b981; }
+        
+        /* Buttons */
+        .modal-actions { display: flex; gap: 10px; margin-top: 25px; }
+        .btn-primary { background: #10b981; color: white; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; flex-grow: 1; font-size: 14px; transition: background 0.2s; }
+        .btn-primary:hover { background: #059669; }
+        .btn-cancel { background: #e0e6ed; color: #2c3e50; }
+        .btn-cancel:hover { background: #cbd5e1; }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <nav class="sidebar">
+            <div class="sidebar-brand">🏫 Omni<span>School</span></div>
+            <ul class="nav-links">
+                <li><a href="dashboard.html">📊 Overview</a></li>
+                <li><a href="bursar.html">💰 Finance Office</a></li>
+                <li><a href="grading.html">📝 Academics</a></li>
+                <li class="active"><a href="admin.html">⚙️ Administration</a></li>
+            </ul>
+            <div class="sidebar-footer">IntraCore Digital Systems<br>v1.0.0</div>
+        </nav>
+
+        <main class="main-content">
+            <div class="header">
+                <h1>
+                    <a href="dashboard.html" class="btn-back">&larr; Back</a>
+                    Roster: <span id="class-title" style="color: #10b981;">Loading...</span>
+                </h1>
+                <div class="sync-badge">Live Sync 🟢</div>
+            </div>
+
+            <div class="data-card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Student Name</th>
+                            <th>System ID</th>
+                            <th>Guardian Info</th>
+                        </tr>
+                    </thead>
+                    <tbody id="roster-table-body">
+                        </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <div class="modal-overlay" id="profile-modal">
+        <div class="modal-card">
+            
+            <div class="profile-header">
+                <div class="avatar" id="modal-avatar">??</div>
+                <div class="profile-titles">
+                    <h3 id="modal-display-name">Student Name</h3>
+                    <div class="sys-id-badge" id="modal-sys-id">ST260000X</div>
+                </div>
+            </div>
+
+            <div class="section-title">Academic Record</div>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <label>Current Assignment</label>
+                    <span id="modal-display-class">...</span>
+                </div>
+                <div class="stat-item">
+                    <label>Date Enrolled</label>
+                    <span id="modal-display-enrolled">...</span>
+                </div>
+            </div>
+
+            <div class="section-title">KYC & Biometrics</div>
+            <input type="hidden" id="edit-doc-id">
+            
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px;">
+                <div class="input-group">
+                    <label>Student Full Name</label>
+                    <input type="text" id="edit-name">
+                </div>
+                <div class="input-group">
+                    <label>Date of Birth</label>
+                    <input type="date" id="edit-dob">
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="input-group">
+                    <label>Guardian Name</label>
+                    <input type="text" id="edit-parent-name">
+                </div>
+                <div class="input-group">
+                    <label>Contact Details</label>
+                    <input type="tel" id="edit-parent-contact">
+                </div>
+                <div class="input-group">
+                    <label>Guardian Email</label>
+                    <input type="email" id="edit-parent-email">
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-primary" id="save-profile-btn">Save Changes</button>
+                <button class="btn-primary btn-cancel" id="close-modal-btn">Close File</button>
+            </div>
+            <p id="modal-feedback" style="text-align: center; margin-top: 15px; font-weight: bold; font-size: 13px;"></p>
+        </div>
+    </div>
+
+    <script type="module" src="roster.js"></script>
+</body>
+</html>

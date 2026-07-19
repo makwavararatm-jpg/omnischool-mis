@@ -1,0 +1,8 @@
+{
+  "name": "OmniSchool Register",
+  "short_name": "OmniSchool",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#f4f4f9",
+  "theme_color": "#4CAF50"
+}

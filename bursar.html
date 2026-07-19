@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OmniSchool - Finance Office</title>
+    <!-- EmailJS Engine -->
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <style>
+        /* Base Reset & Layout */
+        body, html { font-family: system-ui, sans-serif; margin: 0; padding: 0; background: #f4f7f6; color: #333; height: 100vh; overflow: hidden; }
+        .app-container { display: flex; height: 100vh; width: 100vw; }
+        
+        /* --- SIDEBAR --- */
+        .sidebar { width: 260px; background: #10b981; color: white; display: flex; flex-direction: column; flex-shrink: 0; box-shadow: 2px 0 10px rgba(0,0,0,0.05); z-index: 10; }
+        .sidebar-brand { padding: 25px 20px; font-size: 24px; font-weight: bold; color: #fff; border-bottom: 1px solid rgba(255,255,255,0.2); display: flex; align-items: center; gap: 10px; }
+        .sidebar-brand span { color: #e8f8f5; font-weight: normal; }
+        .nav-links { list-style: none; padding: 0; margin: 20px 0; display: flex; flex-direction: column; gap: 5px; }
+        .nav-links li { padding: 0 15px; }
+        .nav-links a { display: flex; align-items: center; gap: 12px; padding: 12px 15px; color: #e8f8f5; text-decoration: none; border-radius: 8px; transition: all 0.2s; font-weight: 500; }
+        .nav-links a:hover { background: rgba(255,255,255,0.2); color: white; }
+        .nav-links li.active a { background: white; color: #10b981; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .sidebar-footer { margin-top: auto; padding: 20px; border-top: 1px solid rgba(255,255,255,0.2); font-size: 12px; color: rgba(255,255,255,0.8); text-align: center; }
+
+        /* --- MAIN CONTENT AREA --- */
+        .main-content { flex-grow: 1; padding: 30px; overflow-y: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .header h1 { margin: 0; color: #2c3e50; }
+        .sync-badge { background: #e8f8f5; color: #10b981; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 14px; border: 1px solid #10b981; }
+
+        /* --- TABS SYSTEM --- */
+        .tabs { display: flex; gap: 10px; margin-bottom: 30px; border-bottom: 2px solid #e0e0e0; padding-bottom: 10px; flex-wrap: wrap; }
+        .tab-btn { background: none; border: none; font-size: 15px; font-weight: bold; color: #7f8c8d; padding: 10px 18px; cursor: pointer; border-radius: 8px; transition: all 0.2s; }
+        .tab-btn:hover { background: #e8f8f5; color: #10b981; }
+        .tab-btn.active { background: #10b981; color: white; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- WORKSPACES & CARDS --- */
+        .finance-workspace { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: start; }
+        .terminal-card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
+        .terminal-card h3 { margin-top: 0; color: #2c3e50; margin-bottom: 20px; font-size: 18px; border-bottom: 2px solid #f4f7f6; padding-bottom: 10px;}
+        
+        .input-group { margin-bottom: 20px; }
+        .input-group label { display: block; font-weight: 600; margin-bottom: 8px; color: #7f8c8d; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .input-group select, .input-group input, .input-group textarea { width: 100%; padding: 12px; border: 1px solid #e0e0e0; border-radius: 8px; box-sizing: border-box; font-size: 15px; outline: none; transition: border-color 0.2s; background: #fdfdfd; font-family: inherit; }
+        .input-group select:focus, .input-group input:focus, .input-group textarea:focus { border-color: #10b981; }
+        
+        .btn-pay { background: #10b981; color: white; padding: 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; font-size: 16px; transition: background 0.2s, transform 0.1s; }
+        .btn-pay:hover { background: #059669; }
+        .btn-pay:active { transform: scale(0.98); }
+        .btn-danger { background: #e74c3c; }
+        .btn-danger:hover { background: #c0392b; }
+
+        #receipt-area { display: none; background: #fff; padding: 30px; border: 1px dashed #ccc; border-radius: 8px; box-shadow: 0 10px 20px rgba(0,0,0,0.05); position: relative; }
+        #receipt-area::before { content: ''; position: absolute; top: -5px; left: 0; right: 0; height: 10px; background-image: radial-gradient(#f4f7f6 4px, transparent 5px); background-size: 15px 15px; background-repeat: repeat-x; }
+        .receipt-header { text-align: center; border-bottom: 2px dashed #eee; padding-bottom: 15px; margin-bottom: 20px; }
+        .receipt-header h3 { margin: 0; color: #2c3e50; font-size: 20px; }
+        .receipt-header p { margin: 5px 0 0 0; color: #7f8c8d; font-size: 14px; }
+        .receipt-body p { display: flex; justify-content: space-between; margin: 10px 0; font-size: 15px; color: #2c3e50; font-family: monospace; }
+        .receipt-body strong { color: #7f8c8d; font-family: system-ui, sans-serif; }
+        .r-total { font-size: 24px !important; font-weight: bold; color: #10b981 !important; border-top: 2px dashed #eee; padding-top: 15px; margin-top: 15px !important; }
+        .receipt-footer { text-align: center; margin-top: 30px; font-size: 12px; color: #95a5a6; }
+
+        /* --- LEDGER TABLE SPECIFICS --- */
+        .filter-bar { display: flex; gap: 15px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); margin-bottom: 20px; align-items: flex-end; }
+        .filter-bar .input-group { margin-bottom: 0; flex-grow: 1; }
+        .btn-filter { background: #2c3e50; color: white; padding: 12px 25px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px; height: 45px; }
+        
+        .ledger-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { padding: 15px; border-bottom: 2px solid #f0f0f0; color: #7f8c8d; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
+        td { padding: 15px; border-bottom: 1px solid #f0f0f0; color: #2c3e50; font-weight: 500; font-size: 14px; }
+        tr:hover td { background: #f8fafc; }
+        
+        .badge-income { background: #e8f8f5; color: #10b981; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+        .badge-expense { background: #fdedec; color: #e74c3c; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+        .empty-state { text-align: center; padding: 40px; color: #7f8c8d; font-style: italic; }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <nav class="sidebar">
+            <div class="sidebar-brand">🏫 Omni<span>School</span></div>
+            <ul class="nav-links">
+                <li><a href="dashboard.html">📊 Overview</a></li>
+                <li class="active"><a href="bursar.html">💰 Finance Office</a></li>
+                <li><a href="grading.html">📝 Academics</a></li>
+                <li><a href="admin.html">⚙️ Administration</a></li>
+            <li style="margin-top: 25px;"><a href="index.html" style="color: #ff6b6b; font-weight: bold;">🚪 Secure Logout</a></li>
+            </ul>
+            <div class="sidebar-footer">IntraCore Digital Systems<br>v1.0.0</div>
+        </nav>
+
+        <main class="main-content">
+            <div class="header">
+                <h1>Finance & Ledger</h1>
+                <div class="sync-badge" id="network-status">Live Sync 🟢</div>
+            </div>
+
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('income')">💵 Fee Collection</button>
+                <button class="tab-btn" onclick="switchTab('expense')">📉 Log Expense</button>
+                <button class="tab-btn" onclick="switchTab('arrears')" id="tab-btn-arrears">⚠️ Fee Arrears</button>
+                <button class="tab-btn" onclick="switchTab('ledger')" id="tab-btn-ledger">📋 Master Ledger</button>
+                <!-- NEW EVENTS TAB -->
+                <button class="tab-btn" onclick="switchTab('events')">📢 Announcements</button>
+            </div>
+
+            <div id="tab-income" class="tab-content active">
+                <div class="finance-workspace">
+                    <div class="terminal-card">
+                        <h3>Process Payment</h3>
+
+                        <div id="account-status-card" style="display: none; background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #10b981; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <p style="margin: 0; color: #7f8c8d; font-size: 11px; text-transform: uppercase; font-weight: bold;">Current Balance Owed</p>
+                                    <h3 style="margin: 5px 0 0 0; color: #2c3e50; font-size: 24px;" id="display-balance">...</h3>
+                                </div>
+                                <div style="text-align: right;">
+                                    <p style="margin: 0; color: #7f8c8d; font-size: 12px;">Term Fee: <strong id="display-term-fee" style="color: #2c3e50;">...</strong></p>
+                                    <p style="margin: 5px 0 0 0; color: #7f8c8d; font-size: 12px;">Total Paid: <strong id="display-total-paid" style="color: #10b981;">...</strong></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="student-select">Select Student</label>
+                            <select id="student-select"><option value="">Loading students...</option></select>
+                        </div>
+                        <div class="input-group">
+                            <label for="payment-method">Payment Method</label>
+                            <select id="payment-method">
+                                <option value="Cash (USD)">💵 Cash (USD)</option>
+                                <option value="Mobile Money">📱 Mobile Money</option>
+                                <option value="Bank Transfer">🏦 Bank Transfer</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label for="amount">Amount Paid (USD)</label>
+                            <input type="number" id="amount" placeholder="0.00" min="1" step="0.01">
+                        </div>
+                        <div class="input-group">
+                            <label for="payment-desc">Payment Narration / Reference</label>
+                            <input type="text" id="payment-desc" placeholder="e.g. $100 for current term, $25 for old arrears">
+                        </div>
+                        <button class="btn-pay" id="process-btn">Complete Transaction</button>
+                    </div>
+
+                    <div id="receipt-area">
+                        <div class="receipt-header">
+                            <h3>OMNISCHOOL</h3><p>Official Digital Receipt</p>
+                        </div>
+                        <div class="receipt-body">
+                            <p><strong>Date:</strong> <span id="r-date"></span></p>
+                            <p><strong>Student:</strong> <span id="r-student"></span></p>
+                            <p><strong>Method:</strong> <span id="r-method"></span></p>
+                            <p class="r-total"><strong>Amount Paid:</strong> <span>$<span id="r-amount"></span></span></p>
+                        </div>
+                        <div class="receipt-footer">* Synced securely to the master ledger.<br>Thank you.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-expense" class="tab-content">
+                <div class="finance-workspace" style="grid-template-columns: 1fr; max-width: 500px;">
+                    <div class="terminal-card">
+                        <h3>Capture Operational Expense</h3>
+                        <div class="input-group">
+                            <label for="expense-category">Expense Category</label>
+                            <select id="expense-category">
+                                <option value="Utilities">⚡ Utilities</option>
+                                <option value="Maintenance">🛠️ Building Maintenance</option>
+                                <option value="Supplies">📝 Academic Supplies</option>
+                                <option value="Salaries">💼 Salaries & Wages</option>
+                                <option value="Transport">🚐 Transport & Fuel</option>
+                                <option value="Other">📌 Other / Miscellaneous</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label for="expense-amount">Amount Spent (USD)</label>
+                            <input type="number" id="expense-amount" placeholder="0.00" min="0.1" step="0.01">
+                        </div>
+                        <div class="input-group">
+                            <label for="expense-desc">Description / Reference</label>
+                            <textarea id="expense-desc" rows="2" placeholder="e.g., Prepaid ZESA token..."></textarea>
+                        </div>
+                        <button class="btn-pay btn-danger" id="log-expense-btn">Lock Expense to Vault</button>
+                        <p id="expense-feedback" style="text-align: center; font-weight: bold; margin-top: 15px; font-size: 14px;"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-arrears" class="tab-content">
+                <div class="ledger-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="margin: 0; color: #2c3e50;">Students in Arrears</h3>
+                        <button class="btn-pay" id="refresh-arrears-btn" style="width: auto; padding: 10px 20px; font-size: 13px;">🔄 Refresh List</button>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Student Name</th>
+                                <th>Class</th>
+                                <th>Previous Arrears Note</th>
+                                <th style="text-align: right;">Total Outstanding</th>
+                            </tr>
+                        </thead>
+                        <tbody id="arrears-table-body">
+                            <tr><td colspan="4" class="empty-state">Loading arrears data...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="tab-ledger" class="tab-content">
+                <div class="filter-bar">
+                    <div class="input-group">
+                        <label>Start Date</label>
+                        <input type="date" id="filter-start">
+                    </div>
+                    <div class="input-group">
+                        <label>End Date</label>
+                        <input type="date" id="filter-end">
+                    </div>
+                    <button class="btn-filter" id="apply-filter-btn">Filter Ledger</button>
+                    <button class="btn-filter" id="clear-filter-btn" style="background: #95a5a6; margin-left: 10px;">Clear</button>
+                </div>
+                <div class="ledger-card">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date & Time</th>
+                                <th>Type</th>
+                                <th>Details (Student / Category)</th>
+                                <th>Method / Ref</th>
+                                <th style="text-align: right;">Amount (USD)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ledger-table-body">
+                            <tr><td colspan="5" class="empty-state">Loading master ledger...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- NEW: PUBLISH EVENTS TAB -->
+            <div id="tab-events" class="tab-content">
+                <div class="finance-workspace" style="grid-template-columns: 1fr; max-width: 600px;">
+                    <div class="terminal-card">
+                        <h3>Publish Campus Announcement</h3>
+                        <div class="input-group">
+                            <label>Announcement Title</label>
+                            <input type="text" id="event-title" placeholder="e.g. End of Term Closure & Fees Update">
+                        </div>
+                        <div class="input-group">
+                            <label>Event Date (Optional)</label>
+                            <input type="date" id="event-date">
+                        </div>
+                        <div class="input-group">
+                            <label>Announcement Details</label>
+                            <textarea id="event-desc" rows="4" placeholder="Provide details to be broadcasted to students and staff..."></textarea>
+                        </div>
+                        <button class="btn-pay" id="publish-event-btn" style="background: #2c3e50;">Broadcast Announcement</button>
+                        <p id="event-feedback" style="text-align: center; font-weight: bold; margin-top: 15px; font-size: 14px;"></p>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            document.getElementById('tab-' + tabId).classList.add('active');
+        }
+    </script>
+    <script type="module" src="bursar.js"></script>
+</body>
+</html>

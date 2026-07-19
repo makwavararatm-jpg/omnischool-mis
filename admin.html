@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OmniSchool - Administration</title>
+    <style>
+        /* Base Reset & Layout */
+        body, html { font-family: system-ui, sans-serif; margin: 0; padding: 0; background: #f4f7f6; color: #333; height: 100vh; overflow: hidden; }
+        .app-container { display: flex; height: 100vh; width: 100vw; }
+        
+        /* Sidebar */
+        .sidebar { width: 260px; background: #10b981; color: white; display: flex; flex-direction: column; flex-shrink: 0; box-shadow: 2px 0 10px rgba(0,0,0,0.05); z-index: 10; }
+        .sidebar-brand { padding: 25px 20px; font-size: 24px; font-weight: bold; color: #fff; border-bottom: 1px solid rgba(255,255,255,0.2); display: flex; align-items: center; gap: 10px; }
+        .sidebar-brand span { color: #e8f8f5; font-weight: normal; }
+        .nav-links { list-style: none; padding: 0; margin: 20px 0; display: flex; flex-direction: column; gap: 5px; }
+        .nav-links li { padding: 0 15px; }
+        .nav-links a { display: flex; align-items: center; gap: 12px; padding: 12px 15px; color: #e8f8f5; text-decoration: none; border-radius: 8px; transition: all 0.2s; font-weight: 500; }
+        .nav-links a:hover { background: rgba(255,255,255,0.2); color: white; }
+        .nav-links li.active a { background: white; color: #10b981; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .sidebar-footer { margin-top: auto; padding: 20px; border-top: 1px solid rgba(255,255,255,0.2); font-size: 12px; color: rgba(255,255,255,0.8); text-align: center; }
+
+        /* Main Content */
+        .main-content { flex-grow: 1; padding: 30px; overflow-y: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .header h1 { margin: 0; color: #2c3e50; }
+        .sync-badge { background: #e8f8f5; color: #10b981; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 14px; border: 1px solid #10b981; }
+
+        /* Tabs System */
+        .tabs { display: flex; gap: 10px; margin-bottom: 30px; border-bottom: 2px solid #e0e0e0; padding-bottom: 10px; }
+        .tab-btn { background: none; border: none; font-size: 16px; font-weight: bold; color: #7f8c8d; padding: 10px 20px; cursor: pointer; border-radius: 8px; transition: all 0.2s; }
+        .tab-btn:hover { background: #e8f8f5; color: #10b981; }
+        .tab-btn.active { background: #10b981; color: white; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Admin Layout & Cards */
+        .admin-workspace { display: flex; gap: 30px; align-items: flex-start; }
+        .settings-card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); width: 100%; max-width: 500px; }
+        .settings-card h3 { margin-top: 0; color: #2c3e50; margin-bottom: 25px; font-size: 18px; border-bottom: 2px solid #f4f7f6; padding-bottom: 15px;}
+        
+        .input-group { margin-bottom: 20px; }
+        .input-group label { display: block; font-weight: 600; margin-bottom: 8px; color: #7f8c8d; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .input-group select, .input-group input { width: 100%; padding: 12px; border: 1px solid #e0e0e0; border-radius: 8px; box-sizing: border-box; font-size: 15px; outline: none; transition: border-color 0.2s; background: #fdfdfd; }
+        .input-group select:focus, .input-group input:focus { border-color: #10b981; }
+        
+        /* NEW: Checkbox Grid Styles for Staff */
+        .checkbox-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-height: 150px; overflow-y: auto; background: #fdfdfd; border: 1px solid #e0e0e0; padding: 12px; border-radius: 8px; }
+        .checkbox-label { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #2c3e50; font-weight: 500; cursor: pointer; }
+        .checkbox-label input { width: 16px; height: 16px; cursor: pointer; accent-color: #10b981; }
+
+        .btn-primary { background: #10b981; color: white; padding: 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; font-size: 16px; transition: background 0.2s, transform 0.1s; margin-top: 10px; }
+        .btn-primary:hover { background: #059669; }
+        .btn-primary:active { transform: scale(0.98); }
+        .btn-secondary { background: #2c3e50; color: white; }
+
+        /* Lists & Tables */
+        .list-container { margin-top: 25px; border-top: 2px solid #f4f7f6; padding-top: 20px; }
+        .list-item { display: flex; justify-content: space-between; padding: 12px 15px; background: #f8fafc; border-radius: 8px; margin-bottom: 10px; font-weight: 500; border: 1px solid #e2e8f0; align-items: center; }
+        .btn-delete { background: #ffeded; color: #e74c3c; border: none; padding: 5px 10px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        
+        #feedback-msg, #settings-feedback, #staff-feedback { margin-top: 20px; text-align: center; font-weight: 600; font-size: 14px; min-height: 20px; }
+        .helper-text { color: #95a5a6; font-size: 13px; margin-top: 20px; line-height: 1.5; padding: 15px; background: #f8fafc; border-radius: 8px; border-left: 4px solid #10b981;}
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <nav class="sidebar">
+            <div class="sidebar-brand">🏫 Omni<span>School</span></div>
+            <ul class="nav-links">
+                <li><a href="dashboard.html">📊 Overview</a></li>
+                <li><a href="bursar.html">💰 Finance Office</a></li>
+                <li><a href="grading.html">📝 Academics</a></li>
+                <li class="active"><a href="admin.html">⚙️ Administration</a></li>
+            </ul>
+            <div class="sidebar-footer">IntraCore Digital Systems<br>v1.0.0</div>
+        </nav>
+
+        <main class="main-content">
+            <div class="header">
+                <h1>System Administration</h1>
+                <div class="sync-badge" id="network-status">Live Sync 🟢</div>
+            </div>
+
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('enrollment')">👨‍🎓 Student Enrollment</button>
+                <button class="tab-btn" onclick="switchTab('staff')" id="tab-btn-staff">👨‍🏫 Staff Directory</button>
+                <button class="tab-btn" onclick="switchTab('settings')" id="tab-btn-settings">⚙️ System Settings</button>
+            </div>
+
+            <div id="tab-enrollment" class="tab-content active">
+                <div class="admin-workspace">
+                    <div class="settings-card">
+                        <h3>Enroll New Student</h3>
+                        
+                        <div class="input-group">
+                            <label>Student Full Name</label>
+                            <input type="text" id="student-name" placeholder="e.g. Farai Shumba">
+                        </div>
+
+                        <div class="input-group">
+                            <label>Date of Birth</label>
+                            <input type="date" id="student-dob">
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 10px;">
+                            <div class="input-group" style="margin-bottom: 0;">
+                                <label>Guardian Name</label>
+                                <input type="text" id="parent-name" placeholder="e.g. Mr. Mutasa">
+                            </div>
+                            <div class="input-group" style="margin-bottom: 0;">
+                                <label>Phone (SMS Alerts)</label>
+                                <input type="tel" id="parent-contact" placeholder="e.g. +263 77 123 4567">
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Guardian Email (Receipts)</label>
+                            <input type="email" id="parent-email" placeholder="e.g. mutasa@example.com">
+                        </div>
+
+                        <div class="input-group">
+                            <label>Assigned Class / Grade</label>
+                            <select id="student-class">
+                                <option value="">Loading classes from vault...</option>
+                            </select>
+                        </div>
+
+                        <button class="btn-primary" id="add-btn">Save to Master Roster</button>
+                        <p id="feedback-msg"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-staff" class="tab-content">
+                <div class="admin-workspace">
+                    <div class="settings-card">
+    <h3>Onboard Staff Member</h3>
+    
+    <div class="input-group">
+        <label>Teacher Full Name</label>
+        <input type="text" id="staff-name" placeholder="e.g. Mr. Chimuti">
+    </div>
+
+    <div class="input-group">
+        <label>Staff Email</label>
+        <input type="email" id="staff-email" placeholder="e.g. chimuti@omnischool.edu">
+    </div>
+
+    <!-- UPGRADED ASSIGNMENT ENGINE -->
+    <div class="input-group">
+        <label>Teaching Allocations (Class & Subject)</label>
+        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+            <select id="assign-class" style="flex: 1; padding: 10px;">
+                <option value="">-- Class --</option>
+            </select>
+            <select id="assign-subject" style="flex: 1; padding: 10px;">
+                <option value="">-- Subject --</option>
+            </select>
+            <button class="btn-primary" id="add-assignment-btn" style="width: auto; padding: 0 15px; margin-top: 0;">+</button>
+        </div>
+        
+        <!-- Badges will appear here before saving -->
+        <div id="pending-assignments" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; min-height: 30px; padding: 10px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px;">
+            <span style="color: #95a5a6; font-size: 12px; font-style: italic;">No allocations added yet...</span>
+        </div>
+    </div>
+
+    <button class="btn-primary" id="add-staff-btn">Provision Staff Account</button>
+    <p id="staff-feedback"></p>
+
+    <div class="list-container" id="staff-list">
+        <div style="text-align: center; color: #95a5a6; padding: 20px;">Loading staff roster...</div>
+    </div>
+</div>
+                </div>
+            </div>
+
+            <div id="tab-settings" class="tab-content">
+                <div class="admin-workspace">
+                    
+                    <!-- Classes Card (UPGRADED WITH FEES) -->
+                    <div class="settings-card">
+                        <h3>Manage School Classes</h3>
+                        <div class="input-group" style="margin-bottom: 10px;">
+                            <label>Create New Class</label>
+                            <div style="display: flex; gap: 10px;">
+                                <input type="text" id="new-class-name" placeholder="e.g. Form 1" style="flex-grow: 1;">
+                                <input type="number" id="new-class-fee" placeholder="Fee ($)" style="width: 100px;">
+                                <button class="btn-primary btn-secondary" id="save-class-btn" style="margin-top: 0; width: auto; padding: 0 20px;">Add</button>
+                            </div>
+                        </div>
+                        <p id="settings-feedback"></p>
+                        <div class="list-container" id="classes-list"></div>
+                    </div>
+
+                    <div class="settings-card">
+                        <h3>Manage Curriculum Subjects</h3>
+                        <div class="input-group" style="margin-bottom: 10px;">
+                            <label>Create New Subject</label>
+                            <div style="display: flex; gap: 10px;">
+                                <input type="text" id="new-subject-name" placeholder="e.g. Mathematics" style="flex-grow: 1;">
+                                <button class="btn-primary btn-secondary" id="save-subject-btn" style="margin-top: 0; width: auto; padding: 0 20px;">Add</button>
+                            </div>
+                        </div>
+                        <p id="subject-feedback"></p>
+                        <div class="list-container" id="subjects-list"></div>
+                    </div>
+
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            document.getElementById('tab-' + tabId).classList.add('active');
+        }
+    </script>
+    <script type="module" src="admin.js"></script>
+</body>
+</html>
